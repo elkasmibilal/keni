@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Facture KinéPro PDF</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body { font-family: Arial; background: #f2f2f2; }
+.container { width: 520px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; }
+label { display: block; margin-top: 10px; }
+input, select { width: 100%; padding: 7px; }
+button { margin-top: 20px; width: 100%; padding: 10px; background: #1b7f5c; color: white; border: none; font-size: 16px; cursor: pointer; }
+h3 { margin-top: 20px; color: #1b7f5c; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Facture – KinéPro</h2>
+
+<!-- Champs du patient -->
+<label>Nom</label>
+<input id="nom">
+<label>Prénom</label>
+<input id="prenom">
+<label>CIN</label>
+<input id="cin">
+<label>Adresse du patient</label>
+<input id="adresse_patient">
+
+<!-- Champs administratifs -->
+<label>Facture N°</label>
+<input id="facture_num" value="2026-001">
+<label>IF (Identifiant fiscal)</label>
+<input id="if">
+<label>ICE</label>
+<input id="ice">
+<label>Patente</label>
+<input id="patente">
+
+<h3>Rééducation fonctionnelle</h3>
+<label>Nombre de séances</label>
+<input type="number" id="seances_reedu">
+<label>Prix unitaire (MAD)</label>
+<input type="number" id="prix_reedu">
+
+<h3>Massage thérapeutique</h3>
+<label>Nombre de séances</label>
+<input type="number" id="seances_massage">
+<label>Prix unitaire (MAD)</label>
+<input type="number" id="prix_massage">
+
+<h3>Mode de paiement</h3>
+<label>Sélectionnez le mode de paiement</label>
+<select id="mode_paiement">
+    <option value="Espèces">Espèces</option>
+    <option value="Chèque">Chèque</option>
+    <option value="Virement">Virement</option>
+</select>
+
+<button onclick="genererPDF()">Générer la facture PDF</button>
+</div>
+
+<script>
+function genererPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let img = new Image();
+    img.src = "Image1.png"; // logo dans le même dossier
+    img.onload = function() {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const imgWidth = 60;
+        const x = (pageWidth - imgWidth)/2;
+        doc.addImage(img, 'PNG', x, 10, imgWidth, 25);
+
+        // Récupérer les valeurs du formulaire
+        const nom = document.getElementById("nom").value;
+        const prenom = document.getElementById("prenom").value;
+        const cin = document.getElementById("cin").value;
+        const adresse_patient = document.getElementById("adresse_patient").value;
+
+        const facture_num = document.getElementById("facture_num").value;
+        const if_num = document.getElementById("if").value;
+        const ice = document.getElementById("ice").value;
+        const patente = document.getElementById("patente").value;
+
+        const sr = Number(document.getElementById("seances_reedu").value || 0);
+        const pr = Number(document.getElementById("prix_reedu").value || 0);
+        const sm = Number(document.getElementById("seances_massage").value || 0);
+        const pm = Number(document.getElementById("prix_massage").value || 0);
+        const total_reedu = sr*pr;
+        const total_massage = sm*pm;
+        const total = total_reedu + total_massage;
+        const modePaiement = document.getElementById("mode_paiement").value;
+        const date = new Date().toLocaleDateString();
+
+        let y = 45;
+
+        // ENTÊTE
+        doc.setFontSize(16);
+        doc.text("FACTURE", pageWidth/2, y, {align:"center"});
+        y += 8;
+        doc.setFontSize(12);
+        doc.text("Cabinet de Kinésithérapie KINEPRO", 20, y); y+=6;
+        doc.text("Kinésithérapeute : AFKIR Rania", 20, y); y+=6;
+        doc.text("Adresse : Route de l’aviation résidence Al Manzah villa 10, Tanger.", 20, y); y+=6;
+        doc.text("Téléphone : 07 04 45 45 47", 20, y); y+=6;
+        doc.text("IF (Identifiant fiscal) : " + if_num, 20, y); y+=6;
+        doc.text("ICE : " + ice, 20, y); y+=6;
+        doc.text("Patente : " + patente, 20, y); y+=8;
+        doc.text("Facture N° : " + facture_num, 20, y);
+        doc.text("Date : " + date, pageWidth-50, y); y+=10;
+
+        // Infos patient
+        doc.text("Nom et prénom du patient : " + nom + " " + prenom, 20, y); y+=6;
+        doc.text("CIN : " + cin, 20, y); y+=6;
+        doc.text("Adresse : " + adresse_patient, 20, y); y+=10;
+
+        // TABLEAU
+        doc.setFillColor(27,127,92);
+        doc.setTextColor(255,255,255);
+        doc.rect(20, y, 170, 8, 'F');
+        doc.text("Désignation", 25, y+6);
+        doc.text("Séances", 95, y+6);
+        doc.text("Prix (MAD)", 130, y+6);
+        doc.text("Total (MAD)", 165, y+6);
+
+        doc.setTextColor(0,0,0);
+        y += 12;
+        if(sr>0){
+            doc.text("Rééducation fonctionnelle", 25, y);
+            doc.text(sr.toString(), 95, y);
+            doc.text(pr.toString(), 130, y);
+            doc.text(total_reedu.toString(), 165, y);
+            y+=8;
+        }
+        if(sm>0){
+            doc.text("Massage thérapeutique", 25, y);
+            doc.text(sm.toString(), 95, y);
+            doc.text(pm.toString(), 130, y);
+            doc.text(total_massage.toString(), 165, y);
+            y+=8;
+        }
+
+        doc.line(20, y, 190, y);
+        doc.setFontSize(12);
+        doc.text("Total HT : "+total+" MAD", 130, y+10);
+        doc.text("Total TTC : "+total+" MAD", 130, y+17);
+
+        doc.setFontSize(10);
+        doc.text("Mode de paiement : "+modePaiement, 20, y+30);
+        doc.text("Signature et cachet", 20, y+45);
+
+        doc.save("facture_kinepro.pdf");
+    };
+}
+</script>
+</body>
+</html>
